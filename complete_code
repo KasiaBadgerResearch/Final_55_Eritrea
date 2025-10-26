@@ -1,0 +1,51 @@
+# How has female employment in agriculture evolved relative to male employment in agriculture in Eritrea between 1991 and 2023?
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# Folders
+data_raw_folder = "data_raw/"
+data_clean_folder = "data_clean/"
+figures_folder = "figures/"
+
+# Load CSV
+filename = "social-protection-and-labor_eri_filtered.csv"  # Filtered dataset with only relevant rows
+df = pd.read_csv(os.path.join(data_raw_folder, filename))
+
+# Keep only needed columns
+df = df[["Year", "Indicator Name", "Value"]]
+
+# Convert Year and Value to numeric, drop invalid rows
+df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+df = df.dropna(subset=["Year", "Value"])
+
+# Pivot indicators into separate columns
+df_pivot = df.pivot(index="Year", columns="Indicator Name", values="Value").reset_index()
+df_pivot = df_pivot.sort_values("Year")
+
+print("Pivoted Eritrea dataset:")
+display(df_pivot)
+
+# Interpolate missing values for smooth plotting (optional)
+df_plot = df_pivot.interpolate(method='linear')
+
+# Plot the indicators
+plt.figure(figsize=(10,6))
+plt.plot(df_plot["Year"], df_plot["Employment in agriculture, female (% of female employment) (modeled ILO estimate)"], 
+         marker='o', linestyle='-', label="Employment in agriculture, female (% of female employment)")
+plt.plot(df_plot["Year"], df_plot["Employment in agriculture, male (% of male employment) (modeled ILO estimate)"], 
+         marker='o', linestyle='-', label="Employment in agriculture, male (% of male employment)")
+
+plt.title("Eritrea: Female vs Male employment in agriculture (%) (1991-2023)")
+plt.xlabel("Year")
+plt.ylabel("Percentage")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(figures_folder, "eritrea_female_vs_male_employment_in_agriculture.png"))
+plt.show()
+
+# Save cleaned CSV
+df_pivot.to_csv(os.path.join(data_clean_folder, "eritrea_female_vs_male_employment_in_agriculture"), index=False)
